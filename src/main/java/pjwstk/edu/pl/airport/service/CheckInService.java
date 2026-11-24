@@ -30,23 +30,39 @@ public class CheckInService {
 	}
 
 	public BoardingPass checkIn(String bookingReference) {
+		/*
+		* Check-in procedure steps:
+		* - check if booking hasn't been already checked, else abort
+		* - check if booking has assigned flight, else abort
+		* - check if check-in is still possible, else abort
+		* - TBD: check if flight isn't overbooked, else abort
+		* - get seat and mark booking as checked-in
+		* - create a boarding pass
+		* - send the boarding pass
+		* */
+
 		Booking booking = bookingRepository.findByReference(bookingReference)
 				.orElseThrow(() -> new BookingNotFoundException(bookingReference));
 		if (booking.isCheckedIn()) {
 			throw new AlreadyCheckedInException(bookingReference);
 		}
+
 		Flight flight = flightRepository.findByNumber(booking.getFlightNumber())
 				.orElseThrow(() -> new IllegalStateException("Flight " + booking.getFlightNumber() + " not found"));
+
 		LocalDateTime now = LocalDateTime.now(clock);
 		if (now.isAfter(flight.getDepartureTime().minusMinutes(CHECK_IN_CLOSES_MINUTES_BEFORE))) {
 			throw new CheckInClosedException(bookingReference);
 		}
+
 		int seat = flight.assignNextSeat();
 		booking.markCheckedIn();
 		flightRepository.save(flight);
 		bookingRepository.save(booking);
+
 		BoardingPass pass = new BoardingPass(bookingReference, flight.getNumber(), seat);
 		boardingPassSender.send(pass);
+
 		return pass;
 	}
 }
