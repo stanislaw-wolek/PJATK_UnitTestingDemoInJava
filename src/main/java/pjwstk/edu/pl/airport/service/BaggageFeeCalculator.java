@@ -14,7 +14,7 @@ public class BaggageFeeCalculator {
 
 		if (weightKg <= 0) {
 			throw new IllegalArgumentException();
-		} else if (weightKg <= 24) {
+		} else if (weightKg < 24) {
 			return 0;
 		} else if (weightKg <= 32) {
 			return 100;
