@@ -7,6 +7,7 @@ import pjwstk.edu.pl.airport.domain.Flight;
 import pjwstk.edu.pl.airport.domain.exceptions.AlreadyCheckedInException;
 import pjwstk.edu.pl.airport.domain.exceptions.BookingNotFoundException;
 import pjwstk.edu.pl.airport.domain.exceptions.CheckInClosedException;
+import pjwstk.edu.pl.airport.domain.exceptions.FlightFullException;
 import pjwstk.edu.pl.airport.repository.BookingRepository;
 import pjwstk.edu.pl.airport.repository.FlightRepository;
 
@@ -53,6 +54,11 @@ public class CheckInService {
 		LocalDateTime now = LocalDateTime.now(clock);
 		if (now.isAfter(flight.getDepartureTime().minusMinutes(CHECK_IN_CLOSES_MINUTES_BEFORE))) {
 			throw new CheckInClosedException(bookingReference);
+		}
+
+		// for purpose of Task-3
+		if (flight.getCheckedInCount() >= flight.getCapacity()) {
+			throw new FlightFullException(flight.getNumber());
 		}
 
 		int seat = flight.assignNextSeat();

@@ -10,6 +10,7 @@ import pjwstk.edu.pl.airport.domain.Booking;
 import pjwstk.edu.pl.airport.domain.Flight;
 import pjwstk.edu.pl.airport.domain.exceptions.AlreadyCheckedInException;
 import pjwstk.edu.pl.airport.domain.exceptions.CheckInClosedException;
+import pjwstk.edu.pl.airport.domain.exceptions.FlightFullException;
 import pjwstk.edu.pl.airport.repository.BookingRepository;
 import pjwstk.edu.pl.airport.repository.FlightRepository;
 
@@ -88,5 +89,21 @@ class CheckInServiceTest {
 		assertThatThrownBy(() -> service.checkIn("ABC123"))
 				.isInstanceOf(AlreadyCheckedInException.class);
 		verifyNoInteractions(flightRepository, boardingPassSender);
+	}
+
+	@Test
+	void shouldRejectCheckIn_whenFlightIsFull() {
+		// arrange: flight with both seats occupied
+		Booking booking = new Booking("ABC123", "Jan Kowalski", "XY100");
+		Flight flight = new Flight("XY100", NOW.plusHours(2), 2);
+		flight.assignNextSeat();
+		flight.assignNextSeat();
+		when(bookingRepository.findByReference("ABC123")).thenReturn(Optional.of(booking));
+		when(flightRepository.findByNumber("XY100")).thenReturn(Optional.of(flight));
+
+		// act + assert
+		assertThatThrownBy(() -> service.checkIn("ABC123"))
+				.isInstanceOf(FlightFullException.class);
+		verify(boardingPassSender, never()).send(any());
 	}
 }
